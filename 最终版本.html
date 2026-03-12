@@ -1,0 +1,219 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>道德大富翁</title>
+
+<style>
+body {
+  margin: 0;
+  background: #e0e0e0;
+  font-family: Arial, sans-serif;
+  overflow: hidden;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  height: 100vh;
+}
+
+/* 游戏棋盘 */
+.board {
+  display: grid;
+  width: 90vmin;
+  height: 90vmin;
+  max-width: 100%;
+  max-height: 100%;
+  grid-template-columns: repeat(11, 1fr);
+  grid-template-rows: repeat(11, 1fr);
+  border: 5px solid black;
+  background: white;
+  position: relative; /* 玩家绝对定位参考 */
+}
+
+.space {
+  border: 1px solid black;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  text-align: center;
+  font-size: calc(0.8vmin + 5px);
+  box-sizing: border-box;
+  position: relative;
+  flex-direction: column;
+}
+
+/* 角落格子 */
+.corner {
+  background: #f3f3f3;
+  font-weight: bold;
+}
+
+.corner#go::after {
+  content: "➡";
+  font-size: calc(1.5vmin + 5px);
+  margin-top: 5px;
+}
+
+.corner#donate,
+.corner#free,
+.corner#back {
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  align-items: center;
+}
+
+.corner#donate span,
+.corner#free span,
+.corner#back span {
+  display: block;
+  margin-bottom: 5px;
+  font-size: calc(0.9vmin + 5px);
+}
+
+.center {
+  grid-column: 2 / span 9;
+  grid-row: 2 / span 9;
+  background: #c8e6c9;
+}
+
+/* 玩家圆形通用样式 */
+.player {
+  position: absolute; /* 相对于棋盘 */
+  width: 30px;
+  height: 30px;
+  border-radius: 50%;
+  cursor: grab;
+  top: 0px;
+  left: 0px;
+  z-index: 10;
+  transition: transform 0.2s ease; /* 平滑缩放 */
+}
+
+.player:active {
+  cursor: grabbing;
+}
+</style>
+</head>
+<body>
+
+<div class="board" id="board">
+  <!-- Top Row -->
+  <div class="space corner" id="go"><span>起点</span></div>
+  <div class="space"></div>
+  <div class="space"><img src="3.png" alt="行动卡" style="max-width:40%; height:auto;"></div>
+  <div class="space">前进两格</div>
+  <div class="space"></div>
+  <div class="space"><img src="4.png" alt="思考卡" style="max-width:40%; height:auto;"></div>
+  <div class="space">前进四格</div>
+  <div class="space"></div>
+  <div class="space"><img src="3.png" alt="行动卡" style="max-width:40%; height:auto;"></div>
+  <div class="space"></div>
+  <div class="space corner" id="donate"><span>捐款</span>
+    <img src="187.png" alt="捐款图片" style="max-width:40%; height:auto;">
+  </div>
+
+  <!-- Left Column -->
+  <div class="space"><img src="3.png" alt="行动卡" style="max-width:40%; height:auto;"></div>
+  <div class="space"></div>
+  <div class="space"></div>
+  <div class="space"><img src="3.png" alt="行动卡" style="max-width:40%; height:auto;"></div>
+  <div class="space"></div>
+  <div class="space">后退一格</div>
+  <div class="space"><img src="4.png" alt="思考卡" style="max-width:40%; height:auto;"></div>
+  <div class="space"></div>
+  <div class="space"></div>
+
+  <!-- Center -->
+  <div class="center">
+    <div style="display:flex; flex-direction:column; align-items:center; justify-content:center; height:100%;">
+      <img src="3.png" alt="上图" style="max-height:25%; margin-bottom:10px;">
+      <span style="font-size:calc(2vmin + 20px); font-weight:bold; text-align:center;">道德教育 大富翁</span>
+      <img src="4.png" alt="下图" style="max-height:25%; margin-top:10px;">
+    </div>
+  </div>
+
+  <!-- Right Column -->
+  <div class="space"><img src="4.png" alt="思考卡" style="max-width:40%; height:auto;"></div>
+  <div class="space">前进两格</div>
+  <div class="space"></div>
+  <div class="space"></div>
+  <div class="space">后退两格</div>
+  <div class="space"></div>
+  <div class="space"></div>
+  <div class="space"><img src="3.png" alt="行动卡" style="max-width:40%; height:auto;"></div>
+  <div class="space"><img src="4.png" alt="思考卡" style="max-width:40%; height:auto;"></div>
+
+  <!-- Bottom Row -->
+  <div class="space corner" id="free"><span>休息一轮</span>
+    <img src="2.png" style="max-width:40%; height:auto;">
+  </div>
+  <div class="space"><img src="3.png" alt="行动卡" style="max-width:40%; height:auto;"></div>
+  <div class="space">后退三格</div>
+  <div class="space"></div>
+  <div class="space"></div>
+  <div class="space"><img src="4.png" alt="思考卡" style="max-width:40%; height:auto;"></div>
+  <div class="space"></div>
+  <div class="space"><img src="3.png" alt="行动卡" style="max-width:40%; height:auto;"></div>
+  <div class="space"></div>
+  <div class="space"></div>
+  <div class="space corner" id="back"><span>回到起点</span>
+    <img src="1.png" style="max-width:40%; height:auto;">
+  </div>
+
+  <!-- 多玩家 -->
+  <div class="player" style="background-color:#ff5733;" id="player1"></div> <!-- 红色 -->
+  <div class="player" style="background-color:#33aaff;" id="player2"></div> <!-- 蓝色 -->
+  <div class="player" style="background-color:#33ff77;" id="player3"></div> <!-- 绿色 -->
+  <div class="player" style="background-color:#ff33aa;" id="player4"></div> <!-- 粉色 -->
+  <div class="player" style="background-color:#ffaa33;" id="player5"></div> <!-- 橙色 -->
+  <div class="player" style="background-color:#aa33ff;" id="player6"></div> <!-- 紫色 -->
+</div>
+
+<script>
+// 拖拽逻辑封装函数
+function makeDraggable(player) {
+  let isDragging = false;
+  let offsetX = 0;
+  let offsetY = 0;
+
+  player.addEventListener('mousedown', (e) => {
+    isDragging = true;
+    offsetX = e.clientX - player.offsetLeft;
+    offsetY = e.clientY - player.offsetTop;
+
+    // 放大玩家
+    player.style.transform = "scale(2)";
+  });
+
+  document.addEventListener('mousemove', (e) => {
+    if (!isDragging) return;
+
+    let x = e.clientX - offsetX;
+    let y = e.clientY - offsetY;
+
+    // 限制在棋盘范围内
+    x = Math.max(0, Math.min(board.clientWidth - player.clientWidth, x));
+    y = Math.max(0, Math.min(board.clientHeight - player.clientHeight, y));
+
+    player.style.left = x + 'px';
+    player.style.top = y + 'px';
+  });
+
+  document.addEventListener('mouseup', () => {
+    if (isDragging) {
+      isDragging = false;
+      // 停止拖拽恢复原始大小
+      player.style.transform = "scale(1)";
+    }
+  });
+}
+
+// 给每个玩家启用拖拽
+const players = document.querySelectorAll('.player');
+players.forEach(p => makeDraggable(p));
+</script>
+
+</body>
+</html>
