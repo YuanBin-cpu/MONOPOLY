@@ -172,42 +172,69 @@ body {
 </div>
 
 <script>
+const board = document.getElementById('board');
+
 // 拖拽逻辑封装函数
 function makeDraggable(player) {
+
   let isDragging = false;
   let offsetX = 0;
   let offsetY = 0;
 
-  player.addEventListener('mousedown', (e) => {
+  function startDrag(x, y) {
     isDragging = true;
-    offsetX = e.clientX - player.offsetLeft;
-    offsetY = e.clientY - player.offsetTop;
+    offsetX = x - player.offsetLeft;
+    offsetY = y - player.offsetTop;
 
     // 放大玩家
     player.style.transform = "scale(2)";
-  });
+  }
 
-  document.addEventListener('mousemove', (e) => {
+  function drag(x, y) {
     if (!isDragging) return;
 
-    let x = e.clientX - offsetX;
-    let y = e.clientY - offsetY;
+    let posX = x - offsetX;
+    let posY = y - offsetY;
 
     // 限制在棋盘范围内
-    x = Math.max(0, Math.min(board.clientWidth - player.clientWidth, x));
-    y = Math.max(0, Math.min(board.clientHeight - player.clientHeight, y));
+    posX = Math.max(0, Math.min(board.clientWidth - player.clientWidth, posX));
+    posY = Math.max(0, Math.min(board.clientHeight - player.clientHeight, posY));
 
-    player.style.left = x + 'px';
-    player.style.top = y + 'px';
-  });
+    player.style.left = posX + "px";
+    player.style.top = posY + "px";
+  }
 
-  document.addEventListener('mouseup', () => {
+  function endDrag() {
     if (isDragging) {
       isDragging = false;
-      // 停止拖拽恢复原始大小
       player.style.transform = "scale(1)";
     }
+  }
+
+  /* 鼠标 */
+  player.addEventListener("mousedown", (e) => {
+    startDrag(e.clientX, e.clientY);
   });
+
+  document.addEventListener("mousemove", (e) => {
+    drag(e.clientX, e.clientY);
+  });
+
+  document.addEventListener("mouseup", endDrag);
+
+  /* 触控 (手机 / Smartboard) */
+  player.addEventListener("touchstart", (e) => {
+    const touch = e.touches[0];
+    startDrag(touch.clientX, touch.clientY);
+  });
+
+  document.addEventListener("touchmove", (e) => {
+    const touch = e.touches[0];
+    drag(touch.clientX, touch.clientY);
+  });
+
+  document.addEventListener("touchend", endDrag);
+
 }
 
 // 给每个玩家启用拖拽
