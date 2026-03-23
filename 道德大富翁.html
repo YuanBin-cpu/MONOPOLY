@@ -1,0 +1,204 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>道德大富翁</title>
+
+<style>
+body{
+  margin:0;
+  font-family:Arial,sans-serif;
+  min-height:100vh;
+  background:#e0e0e0;
+  overflow:hidden;
+}
+.page{ display:none; width:100%; height:100%; }
+
+/* 棋盘页面 */
+.board-page{ display:flex; justify-content:center; align-items:center; height:100vh; position:relative; }
+.container{ position:relative; display:flex; justify-content:center; align-items:center; }
+.side-buttons{ display:flex; flex-direction:column; gap:15px; position:absolute; top:50%; transform:translateY(-50%); }
+.side-buttons.left{ left:-120px; }
+.side-buttons.right{ right:-120px; }
+.side-buttons button{ padding:12px 24px; font-size:18px; font-weight:bold; border-radius:10px; border:none; cursor:pointer; color:white; transition:0.3s; }
+.side-buttons.left button{ background:#ff8c42; }
+.side-buttons.right button{ background:#42a5f5; }
+.side-buttons button:hover{ transform:scale(1.1); box-shadow:0 0 12px rgba(0,0,0,0.3); }
+
+.board{
+  width:90vmin; height:90vmin; border:5px solid black; background:white;
+  display:grid; grid-template-columns:2fr repeat(9,0.6fr) 2fr; grid-template-rows:2fr repeat(9,0.6fr) 2fr;
+  position:relative; z-index:1;
+}
+.space{ border:1px solid black; display:flex; justify-content:center; align-items:center; text-align:center; flex-direction:column; box-sizing:border-box; }
+.horizontal{ writing-mode: horizontal-tb; font-size:calc(2vmin+6px); font-weight:bold; }
+.vertical-chars{ writing-mode: horizontal-tb; line-height:1.2em; font-size:calc(2vmin+6px); font-weight:bold; }
+.think-card{ background:#a8d0e6; }
+.action-card{ background:#b8e6a8; }
+.move-card{ background:#f9e79f; }
+.corner{ background:#f3f3f3; font-weight:bold; font-size:calc(2vmin+10px); }
+#go::after{ content:"➡"; font-size:calc(2vmin+10px); margin-top:5px; }
+.center{ grid-column:2 / span 9; grid-row:2 / span 9; background:#c8e6c9; }
+.centerContent{ display:flex; flex-direction:column; align-items:center; justify-content:center; height:100%; }
+.space img{ width:40%; }
+.player{ position:absolute; width:30px; height:30px; border-radius:50%; cursor:grab; touch-action:none; border:2px solid black; }
+
+/* 抽题页面 */
+.quiz-page{ display:flex; justify-content:center; align-items:center; width:100%; height:100vh; position:relative; background:linear-gradient(120deg,#f0f0f0,#d0d0d0); }
+#quizContainer{ width:720px; max-width:90%; height:450px; max-height:80%; border-radius:20px; padding:25px; box-shadow:0 20px 50px rgba(0,0,0,0.2); display:flex; flex-direction:column; align-items:center; justify-content:center; position:relative; }
+.thinkQuiz{ background:#e1f5fe; }
+.thinkQuiz .screen{ width:100%; height:70%; background:#b3e5fc; border-radius:10px; border:4px solid #0288d1; display:flex; justify-content:center; align-items:center; font-size:28px; text-align:center; padding:20px; box-sizing:border-box; margin-top:70px; overflow-y:auto; }
+.actionQuiz{ background:#fff8e1; }
+.actionQuiz .screen{ width:100%; height:70%; background:#ffeecc; border-radius:10px; border:4px solid #ffb74d; display:flex; justify-content:center; align-items:center; font-size:28px; text-align:center; padding:20px; box-sizing:border-box; margin-top:70px; overflow-y:auto; }
+.controls{ margin-top:25px; display:flex; justify-content:center; gap:20px; }
+.bigButton{ font-size:20px; padding:12px 24px; border-radius:12px; font-weight:bold; cursor:pointer; color:white; transition:0.3s; }
+.bigButton:hover{ transform:scale(1.05); box-shadow:0 0 12px rgba(0,0,0,0.3); }
+#thinkStart{ background: linear-gradient(45deg,#42a5f5,#1e88e5); color:white; }
+#actionStart{ background: linear-gradient(45deg,#ffb74d,#ffa726); color:white; }
+#backButton{ position:absolute; top:15px; left:15px; padding:8px 16px; font-size:16px; border:none; border-radius:8px; cursor:pointer; color:white; z-index:10; }
+#backButton.thinkBack{ background: linear-gradient(45deg,#42a5f5,#1e88e5); }
+#backButton.actionBack{ background: linear-gradient(45deg,#ff8c42,#ffb74d); }
+</style>
+</head>
+<body>
+
+<!-- 棋盘页面 -->
+<div id="boardPage" class="page board-page">
+  <div class="container">
+    <div class="side-buttons left">
+      <button class="action">行为卡</button>
+    </div>
+    <div class="board">
+      <!-- 玩家 -->
+      <div class="player" style="background:red;"></div>
+      <div class="player" style="background:blue;"></div>
+      <div class="player" style="background:green;"></div>
+      <div class="player" style="background:orange;"></div>
+      <div class="player" style="background:purple;"></div>
+      <!-- 棋盘格子 -->
+      <div class="space corner" id="go">起点</div>
+      <div class="space vertical-chars think-card">思<br>考<br>卡</div>
+      <div class="space vertical-chars action-card">行<br>为<br>卡</div>
+      <div class="space vertical-chars move-card">前<br>进<br>两<br>格</div>
+      <div class="space vertical-chars action-card">行<br>为<br>卡</div>
+      <div class="space vertical-chars think-card">思<br>考<br>卡</div>
+      <div class="space vertical-chars move-card">前<br>进<br>四<br>格</div>
+      <div class="space vertical-chars think-card">思<br>考<br>卡</div>
+      <div class="space vertical-chars action-card">行<br>为<br>卡</div>
+      <div class="space vertical-chars action-card">行<br>为<br>卡</div>
+      <div class="space corner move-card">捐款<img src="187.png"></div>
+      <div class="space horizontal think-card">思考卡</div>
+      <div class="space horizontal think-card">思考卡</div>
+      <div class="space horizontal move-card">前进一格</div>
+      <div class="space horizontal action-card">行为卡</div>
+      <div class="space horizontal think-card">思考卡</div>
+      <div class="space horizontal move-card">后退一格</div>
+      <div class="space horizontal action-card">行为卡</div>
+      <div class="space horizontal think-card">思考卡</div>
+      <div class="space horizontal think-card">思考卡</div>
+      <div class="center">
+        <div class="centerContent">
+          <img src="3.png" style="max-height:25%;margin-bottom:10px;">
+          <span style="font-size:calc(2vmin + 20px);font-weight:bold;">道德教育 大富翁</span>
+          <img src="4.png" style="max-height:25%;margin-top:10px;">
+        </div>
+      </div>
+      <div class="space horizontal action-card">行为卡</div>
+      <div class="space horizontal move-card">前进一格</div>
+      <div class="space horizontal action-card">行为卡</div>
+      <div class="space horizontal action-card">行为卡</div>
+      <div class="space horizontal move-card">后退两格</div>
+      <div class="space horizontal action-card">行为卡</div>
+      <div class="space horizontal think-card">思考卡</div>
+      <div class="space horizontal think-card">思考卡</div>
+      <div class="space horizontal move-card">前进一格</div>
+      <div class="space corner">休息一轮<img src="2.png"></div>
+      <div class="space vertical-chars move-card">前<br>进<br>一<br>格</div>
+      <div class="space vertical-chars move-card">后<br>退<br>三<br>格</div>
+      <div class="space vertical-chars action-card">行<br>为<br>卡</div>
+      <div class="space vertical-chars think-card">思<br>考<br>卡</div>
+      <div class="space vertical-chars action-card">行<br>为<br>卡</div>
+      <div class="space vertical-chars think-card">思<br>考<br>卡</div>
+      <div class="space vertical-chars move-card">前<br>进<br>三<br>格</div>
+      <div class="space vertical-chars think-card">思<br>考<br>卡</div>
+      <div class="space vertical-chars move-card">后<br>退<br>一<br>格</div>
+      <div class="space corner">回到起点<img src="1.png"></div>
+    </div>
+    <div class="side-buttons right">
+      <button class="think">思考卡</button>
+    </div>
+  </div>
+</div>
+
+<!-- 思考卡页面 -->
+<div id="thinkPage" class="page quiz-page">
+  <div id="quizContainer" class="tv thinkQuiz">
+    <button id="backButton" class="thinkBack">⬅ 返回</button>
+    <div class="screen" id="thinkScreen">点击开始抽题 🎲</div>
+    <div class="controls">
+      <button id="thinkStart" class="bigButton">🎲 开始抽题</button>
+    </div>
+  </div>
+</div>
+
+<!-- 行为卡页面 -->
+<div id="actionPage" class="page quiz-page">
+  <div id="quizContainer" class="tv actionQuiz">
+    <button id="backButton" class="actionBack">⬅ 返回</button>
+    <div class="screen" id="actionScreen">点击开始抽题 🎲</div>
+    <div class="controls">
+      <button id="actionStart" class="bigButton">🎲 开始抽题</button>
+    </div>
+  </div>
+</div>
+
+<script>
+function showPage(pageId){ document.querySelectorAll('.page').forEach(p=>p.style.display='none'); document.getElementById(pageId).style.display='flex'; }
+showPage('boardPage');
+
+document.querySelector('.side-buttons.left .action').addEventListener('click', ()=>{ showPage('actionPage'); });
+document.querySelector('.side-buttons.right .think').addEventListener('click', ()=>{ showPage('thinkPage'); });
+document.querySelector('#thinkPage .thinkBack').addEventListener('click', ()=>{ showPage('boardPage'); });
+document.querySelector('#actionPage .actionBack').addEventListener('click', ()=>{ showPage('boardPage'); });
+
+const players = document.querySelectorAll('.player');
+const board = document.querySelector('.board');
+const go = document.getElementById("go");
+function placePlayers(){
+  const goRect = go.getBoundingClientRect();
+  const boardRect = board.getBoundingClientRect();
+  players.forEach((player,i)=>{ let offset=i*8; player.style.left=(goRect.left-boardRect.left+10+offset)+"px"; player.style.top=(goRect.top-boardRect.top+10+offset)+"px"; });
+}
+placePlayers();
+
+players.forEach(player=>{
+  let isDragging=false, offsetX=0, offsetY=0;
+  function startDrag(x,y){ isDragging=true; offsetX=x-player.offsetLeft; offsetY=y-player.offsetTop; }
+  function drag(x,y){ if(!isDragging) return; let posX=x-offsetX, posY=y-offsetY; posX=Math.max(0,Math.min(board.clientWidth-player.clientWidth,posX)); posY=Math.max(0,Math.min(board.clientHeight-player.clientHeight,posY)); player.style.left=posX+"px"; player.style.top=posY+"px"; }
+  function endDrag(){ isDragging=false; }
+  player.addEventListener("mousedown",(e)=>{ startDrag(e.clientX,e.clientY); });
+  document.addEventListener("mousemove",(e)=>{ drag(e.clientX,e.clientY); });
+  document.addEventListener("mouseup",endDrag);
+  player.addEventListener("touchstart",(e)=>{ const touch=e.touches[0]; startDrag(touch.clientX,touch.clientY); });
+  document.addEventListener("touchmove",(e)=>{ const touch=e.touches[0]; drag(touch.clientX,touch.clientY); });
+  document.addEventListener("touchend",endDrag);
+});
+
+const thinkQuestions=["为什么要感谢邻居？","说出3种感谢邻居的方法","如果邻居帮助你，你会怎么做？","忽视感谢邻居会有什么影响？","模拟一个感谢邻居的情景","邻居遇到困难，你可以怎么帮助？","为什么社区互助很重要？","如何表达感谢？","如果邻居生病，你会怎么做？","邻居帮你收包裹，你会怎么感谢？"];
+const actionQuestions=["请表演一个遵守交通规则的情景","你如何帮助同学完成作业","如果发现同学受欺负，你会做什么","模拟一次节约用水的行为","如何保持教室整洁","你会如何帮助年长邻居提东西","模拟一次公共场所排队的行为","如何分享玩具或物品","你如何劝导同学不说谎","请模拟一次社区清洁活动"];
+
+function drawCard(screenId, questions){
+  const screen=document.getElementById(screenId); let speed=50, cycles=0;
+  let rolling=setInterval(()=>{
+    const random=Math.floor(Math.random()*questions.length); screen.innerText=questions[random]; cycles++;
+    if(cycles>20){ speed+=20; clearInterval(rolling);
+      rolling=setInterval(()=>{ const random=Math.floor(Math.random()*questions.length); screen.innerText=questions[random]; cycles++; if(cycles>30){ clearInterval(rolling); screen.innerText=questions[Math.floor(Math.random()*questions.length)]; } },speed);
+    }
+  },speed);
+}
+document.getElementById('thinkStart').addEventListener('click',()=>drawCard('thinkScreen',thinkQuestions));
+document.getElementById('actionStart').addEventListener('click',()=>drawCard('actionScreen',actionQuestions));
+</script>
+</body>
+</html>
