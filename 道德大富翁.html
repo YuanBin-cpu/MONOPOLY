@@ -45,12 +45,12 @@ body{
 .player{ position:absolute; width:30px; height:30px; border-radius:50%; cursor:grab; touch-action:none; border:2px solid black; }
 
 /* 抽题页面 */
-.quiz-page{ display:flex; justify-content:center; align-items:center; width:100%; height:100vh; position:relative; background:linear-gradient(120deg,#f0f0f0,#d0d0d0); }
+.quiz-page{ display:flex; justify-content:center; align-items:flex-start; width:100%; height:100vh; position:relative; background:linear-gradient(120deg,#f0f0f0,#d0d0d0); padding-top:50px; }
 #quizContainer{ width:720px; max-width:90%; height:450px; max-height:80%; border-radius:20px; padding:25px; box-shadow:0 20px 50px rgba(0,0,0,0.2); display:flex; flex-direction:column; align-items:center; justify-content:center; position:relative; }
 .thinkQuiz{ background:#e1f5fe; }
-.thinkQuiz .screen{ width:100%; height:70%; background:#b3e5fc; border-radius:10px; border:4px solid #0288d1; display:flex; justify-content:center; align-items:center; font-size:28px; text-align:center; padding:20px; box-sizing:border-box; margin-top:70px; overflow-y:auto; }
+.thinkQuiz .screen{ width:100%; height:70%; background:#b3e5fc; border-radius:10px; border:4px solid #0288d1; display:flex; justify-content:center; align-items:center; font-size:28px; text-align:center; padding:20px; box-sizing:border-box; overflow-y:auto; margin-top:50px; }
 .actionQuiz{ background:#fff8e1; }
-.actionQuiz .screen{ width:100%; height:70%; background:#ffeecc; border-radius:10px; border:4px solid #ffb74d; display:flex; justify-content:center; align-items:center; font-size:28px; text-align:center; padding:20px; box-sizing:border-box; margin-top:70px; overflow-y:auto; }
+.actionQuiz .screen{ width:100%; height:70%; background:#ffeecc; border-radius:10px; border:4px solid #ffb74d; display:flex; justify-content:center; align-items:center; font-size:28px; text-align:center; padding:20px; box-sizing:border-box; overflow-y:auto; margin-top:50px; }
 .controls{ margin-top:25px; display:flex; justify-content:center; gap:20px; }
 .bigButton{ font-size:20px; padding:12px 24px; border-radius:12px; font-weight:bold; cursor:pointer; color:white; transition:0.3s; }
 .bigButton:hover{ transform:scale(1.05); box-shadow:0 0 12px rgba(0,0,0,0.3); }
@@ -59,6 +59,7 @@ body{
 #backButton{ position:absolute; top:15px; left:15px; padding:8px 16px; font-size:16px; border:none; border-radius:8px; cursor:pointer; color:white; z-index:10; }
 #backButton.thinkBack{ background: linear-gradient(45deg,#42a5f5,#1e88e5); }
 #backButton.actionBack{ background: linear-gradient(45deg,#ff8c42,#ffb74d); }
+
 </style>
 </head>
 <body>
@@ -154,6 +155,7 @@ body{
 </div>
 
 <script>
+/* ---------- SPA 页面切换 ---------- */
 function showPage(pageId){ document.querySelectorAll('.page').forEach(p=>p.style.display='none'); document.getElementById(pageId).style.display='flex'; }
 showPage('boardPage');
 
@@ -162,6 +164,7 @@ document.querySelector('.side-buttons.right .think').addEventListener('click', (
 document.querySelector('#thinkPage .thinkBack').addEventListener('click', ()=>{ showPage('boardPage'); });
 document.querySelector('#actionPage .actionBack').addEventListener('click', ()=>{ showPage('boardPage'); });
 
+/* ---------- 玩家放置 ---------- */
 const players = document.querySelectorAll('.player');
 const board = document.querySelector('.board');
 const go = document.getElementById("go");
@@ -172,6 +175,7 @@ function placePlayers(){
 }
 placePlayers();
 
+/* ---------- 玩家拖拽 ---------- */
 players.forEach(player=>{
   let isDragging=false, offsetX=0, offsetY=0;
   function startDrag(x,y){ isDragging=true; offsetX=x-player.offsetLeft; offsetY=y-player.offsetTop; }
@@ -185,20 +189,94 @@ players.forEach(player=>{
   document.addEventListener("touchend",endDrag);
 });
 
-const thinkQuestions=["举出尊重邻居的方法", "忽视尊重邻居会有什么影响？",];
-const actionQuestions=["做出一个尊重邻居的行为"];
+/* ---------- 题目数组 ---------- */
+const thinkQuestions=["为什么要感谢邻居？","说出3种感谢邻居的方法","如果邻居帮助你，你会怎么做？","忽视感谢邻居会有什么影响？","模拟一个感谢邻居的情景","邻居遇到困难，你可以怎么帮助？","为什么社区互助很重要？","如何表达感谢？","如果邻居生病，你会怎么做？","邻居帮你收包裹，你会怎么感谢？"];
+const actionQuestions=["请表演一个遵守交通规则的情景","你如何帮助同学完成作业","如果发现同学受欺负，你会做什么","模拟一次节约用水的行为","如何保持教室整洁","你会如何帮助年长邻居提东西","模拟一次公共场所排队的行为","如何分享玩具或物品","你如何劝导同学不说谎","请模拟一次社区清洁活动"];
 
-function drawCard(screenId, questions){
-  const screen=document.getElementById(screenId); let speed=50, cycles=0;
-  let rolling=setInterval(()=>
-    const random=Math.floor(Math.random()*questions.length); screen.innerText=questions[random]; cycles++;
-    if(cycles>20){ speed+=20; clearInterval(rolling);
-      rolling=setInterval(()=>{ const random=Math.floor(Math.random()*questions.length); screen.innerText=questions[random]; cycles++; if(cycles>30){ clearInterval(rolling); screen.innerText=questions[Math.floor(Math.random()*questions.length)]; } },speed);
-    }
-  },speed);
+/* ---------- 随机不重复抽题函数 ---------- */
+function shuffleArray(array){
+  for(let i=array.length-1;i>0;i--){
+    const j=Math.floor(Math.random()*(i+1));
+    [array[i],array[j]]=[array[j],array[i]];
+  }
+  return array;
 }
-document.getElementById('thinkStart').addEventListener('click',()=>drawCard('thinkScreen',thinkQuestions));
-document.getElementById('actionStart').addEventListener('click',()=>drawCard('actionScreen',actionQuestions));
+
+function createRandomDrawer(questions){
+  let pool = shuffleArray([...questions]);
+  return function(screenId){
+    const screen = document.getElementById(screenId);
+    let speed=50, cycles=0;
+    let rolling=setInterval(()=>{
+      const random=Math.floor(Math.random()*questions.length);
+      screen.innerText=questions[random];
+      cycles++;
+      if(cycles>20){
+        speed+=20; clearInterval(rolling);
+        rolling=setInterval(()=>{
+          const random=Math.floor(Math.random()*questions.length);
+          screen.innerText=questions[random]; cycles++;
+          if(cycles>30){
+            clearInterval(rolling);
+            if(pool.length===0) pool=shuffleArray([...questions]);
+            screen.innerText=pool.shift();
+          }
+        },speed);
+      }
+    },speed);
+  }
+}
+
+const drawThinkCard = createRandomDrawer(thinkQuestions);
+const drawActionCard = createRandomDrawer(actionQuestions);
+
+document.getElementById('thinkStart').addEventListener('click',()=>drawThinkCard('thinkScreen'));
+document.getElementById('actionStart').addEventListener('click',()=>drawActionCard('actionScreen'));
+
+/* ---------- 新增功能：Pointer Events 支持（Smart Board / 触控设备） ---------- */
+
+players.forEach(player=>{
+  let pointerDragging=false;
+  let pointerOffsetX=0;
+  let pointerOffsetY=0;
+
+  player.addEventListener("pointerdown",(e)=>{
+    pointerDragging=true;
+
+    pointerOffsetX=e.clientX-player.offsetLeft;
+    pointerOffsetY=e.clientY-player.offsetTop;
+
+    if(player.setPointerCapture){
+      player.setPointerCapture(e.pointerId);
+    }
+  });
+
+  document.addEventListener("pointermove",(e)=>{
+    if(!pointerDragging) return;
+
+    let posX=e.clientX-pointerOffsetX;
+    let posY=e.clientY-pointerOffsetY;
+
+    posX=Math.max(0,Math.min(board.clientWidth-player.clientWidth,posX));
+    posY=Math.max(0,Math.min(board.clientHeight-player.clientHeight,posY));
+
+    player.style.left=posX+"px";
+    player.style.top=posY+"px";
+  });
+
+  document.addEventListener("pointerup",(e)=>{
+    pointerDragging=false;
+
+    if(player.releasePointerCapture){
+      try{
+        player.releasePointerCapture(e.pointerId);
+      }catch(err){}
+    }
+  });
+
+});
+
+
 </script>
 </body>
 </html>
